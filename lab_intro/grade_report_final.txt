@@ -1,0 +1,22 @@
+Grading r1212 by xli146 on 2016-01-21T23:39:29.694989Z
+Monad Autograder
+Testing lab_intro at 2016-01-25 01:59:35
+
+"I just don't trust easily, and for good reasons... which are my own." ~ Carth Onasi
+
+Setting up test environment...
+Compiling...
+================================================================
+
+
+Running tests...
+================================================================
+testBrighten  . [33 pts] - passed
+testCrosshairs  [33 pts] - passed
+testBlendImages [34 pts] - passed
+
+
+Total score...
+================================================================
+TOTAL SCORE: 100
+
