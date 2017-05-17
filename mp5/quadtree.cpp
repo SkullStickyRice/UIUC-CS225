@@ -1,0 +1,364 @@
+/**
+ * @file quadtree.cpp
+ * Quadtree class implementation.
+ * @date Spring 2008
+ */
+#include "quadtree.h"
+#include <math.h>
+//5.1
+//no arguments constructor
+Quadtree::Quadtree()
+{
+	root =  NULL;
+	d = 0;
+}
+
+//two arguments constructor, which build a Quadtree d*d
+Quadtree::Quadtree(PNG const &source, int resolution)
+{
+	d = resolution;
+	buildTree(source, resolution);
+}
+
+//copy constructor
+Quadtree::Quadtree(Quadtree const &other)
+{
+	if (other.root == NULL) {
+		root = NULL;
+		//d = 0;
+		//return;
+	}
+	else {
+		d = other.d;
+		root = copy_helper(other.root);
+		//copy_helper(root,other.root);
+		
+	}
+	return;
+			
+}
+
+//destructor
+Quadtree::~Quadtree()
+{
+	clear_helper(root);
+}
+//operator
+Quadtree const & Quadtree::operator=(Quadtree const&other)
+{
+	if (this != &other) {
+		d = other.d;
+		clear_helper(root);
+		root = copy_helper(other.root);
+
+	}
+
+	return *this;
+}
+
+//buildtree
+void Quadtree::buildTree(PNG const &source, int resolution)
+{
+	d = resolution;
+	buildTree_helper(source, resolution, root, 0, 0);
+}
+
+RGBAPixel Quadtree::getPixel(int x, int y)const
+{
+	
+	return getPixel_helper(x,y,d,root);
+}
+
+PNG Quadtree::decompress() const
+{
+	PNG out;
+	if (root == NULL) {
+		return out; 
+	}
+	else {
+		PNG result(d,d);
+
+		for (int i = 0; i < d ; i++) {
+			for (int j = 0; j < d; j++) {
+				* result(i,j) = getPixel(i,j);
+			}
+		}
+		return result;
+	}
+}
+
+void Quadtree::clockwiseRotate()
+{
+	if (root == NULL) {
+		return;
+	}
+	clockwiseRotate_helper(root);
+}
+
+void Quadtree::prune(int tolerance)
+{
+	prune_helper(tolerance,root);
+}
+
+
+
+int Quadtree::pruneSize(int tolerance) const
+{
+	Quadtree theTree = Quadtree(*this);
+	theTree.prune(tolerance);
+	return pruneSize_helper(theTree.root);
+}
+
+//theTree.pruneSize(theTree.idealPruene(numleaves)) <= numleaves
+int Quadtree::idealPrune(int numLeaves)const
+{
+	if (root == NULL) {
+		return 0;
+	}
+	return idealPrune_helper(numLeaves, 0, 255*255*3);
+	
+}
+
+//helper function
+void Quadtree::buildTree_helper(PNG const &source, int resolution, QuadtreeNode * & cRoot, int orig_x, int orig_y)
+{
+	//d = resolution;
+	//initilize root;
+	cRoot = new QuadtreeNode;
+	/*cRoot->nwChild = NULL;
+	cRoot->neChild = NULL;
+	cRoot->swChild = NULL;
+	cRoot->seChild = NULL;*/
+	cRoot->x = orig_x;
+	cRoot->y = orig_y;
+	cRoot->d = resolution;
+	
+
+	//if resolution =1, base case
+	if (resolution == 1) {
+		cRoot->nwChild = NULL;
+		cRoot->neChild = NULL;
+		cRoot->swChild = NULL;
+		cRoot->seChild = NULL;
+		cRoot->element = *(source(orig_x,orig_y));
+
+		return ;
+	}
+	
+	else {
+		
+		/*cRoot->nwChild = new QuadtreeNode;
+		cRoot->neChild =  new QuadtreeNode;
+		cRoot->swChild =  new QuadtreeNode;
+		cRoot->seChild =  new QuadtreeNode;*/
+
+
+		//build the 4 children, recursively
+		buildTree_helper(source, resolution/2, cRoot->nwChild, orig_x, orig_y);
+		buildTree_helper(source, resolution/2, cRoot->neChild, orig_x+resolution/2, orig_y);
+		buildTree_helper(source, resolution/2, cRoot->swChild, orig_x, orig_y+resolution/2);
+		buildTree_helper(source, resolution/2, cRoot->seChild, orig_x+resolution/2, orig_y+resolution/2);
+
+		//store color,ave
+		cRoot->element.red = ((cRoot->nwChild->element).red + (cRoot->neChild->element).red + (cRoot->swChild->element).red + (cRoot->seChild->element).red )/4;
+		cRoot->element.green = ((cRoot->nwChild->element).green + (cRoot->neChild->element).green + (cRoot->swChild->element).green + (cRoot->seChild->element).green )/4;
+		cRoot->element.blue = ((cRoot->nwChild->element).blue + (cRoot->neChild->element).blue + (cRoot->swChild->element).blue + (cRoot->seChild->element).blue )/4;
+
+		return;
+	}
+}
+
+Quadtree::QuadtreeNode * Quadtree::copy_helper( QuadtreeNode *otherRoot)
+{
+	if (otherRoot == NULL)
+	{
+  		return NULL;
+	}
+
+	else {
+		QuadtreeNode *thisRoot = new QuadtreeNode;
+
+		thisRoot->element = otherRoot->element;
+		thisRoot->x = otherRoot->x;
+		thisRoot->y = otherRoot->y;
+		thisRoot->d = otherRoot->d;
+
+		thisRoot->nwChild = copy_helper(otherRoot->nwChild);
+		thisRoot->neChild = copy_helper(otherRoot->neChild);
+		thisRoot->swChild = copy_helper(otherRoot->swChild);
+		thisRoot->seChild = copy_helper(otherRoot->seChild);
+		return thisRoot;
+	}
+}
+
+
+void Quadtree::clear_helper(QuadtreeNode * &cRoot)
+{
+	if (cRoot == NULL) {
+		//return;
+	}
+	else {
+	//clear all children
+		clear_helper(cRoot->nwChild);
+		clear_helper(cRoot->neChild);
+		clear_helper(cRoot->swChild);
+		clear_helper(cRoot->seChild);
+	
+		delete cRoot;
+		cRoot = NULL;
+	}
+	return;
+}
+
+
+
+RGBAPixel Quadtree::getPixel_helper(int x, int y, int d, QuadtreeNode* cRoot) const
+{
+
+	// base case
+	if (cRoot->nwChild == NULL || d == 1)
+	{
+		return cRoot->element;
+	}
+	
+	else {
+		/*//nw
+		if (x >= cRoot->x && x < cRoot->x+cRoot->d/2 && y >= cRoot->y && y < cRoot->y+cRoot->d/2) {
+			return getPixel_helper(x,y,cRoot->nwChild);
+		}
+		//ne
+		else if (x >= cRoot->x + cRoot->d/2 && x < cRoot->x+cRoot->d && x) {
+		}
+		//sw
+		if (x ) {
+		}
+		//se
+		if (x ) {
+		}*/
+
+		if (x >= cRoot->x && x < cRoot->x+d/2) { //nw & sw
+			if (y >= cRoot->y && y < cRoot->y + d/2) {
+				return getPixel_helper(x,y,d/2,cRoot->nwChild); 
+			}
+			else {
+				return getPixel_helper(x,y,d/2,cRoot->swChild);
+			}
+		}
+		else { // //ne & se
+			if (y >= cRoot->y && y < cRoot->y + d/2) {
+				return getPixel_helper(x,y,d/2,cRoot->neChild);
+			}
+			else {
+				return getPixel_helper(x,y,d/2,cRoot->seChild);
+			}
+		}
+	}
+}
+
+void Quadtree::clockwiseRotate_helper(QuadtreeNode* cRoot)
+{
+	if (cRoot->nwChild == NULL) {
+		return;
+	}
+		
+	QuadtreeNode *temp = cRoot->nwChild;
+	cRoot->nwChild = cRoot->swChild;
+	cRoot->swChild = cRoot->seChild;
+	cRoot->seChild = cRoot->neChild;
+	cRoot->neChild = temp;
+
+	cRoot->nwChild->x = cRoot->x;
+    	cRoot->nwChild->y = cRoot->y;
+    	cRoot->neChild->x = cRoot->x + cRoot->d/2;
+    	cRoot->neChild->y = cRoot->y;
+    	cRoot->swChild->x = cRoot->x;
+    	cRoot->swChild->y = cRoot->y + cRoot->d/2;
+    	cRoot->seChild->x = cRoot->x + cRoot->d/2;
+   	cRoot->seChild->y = cRoot->y + cRoot->d/2;
+
+	clockwiseRotate_helper(cRoot->nwChild);
+	clockwiseRotate_helper(cRoot->neChild);
+	clockwiseRotate_helper(cRoot->swChild);
+	clockwiseRotate_helper(cRoot->seChild);
+
+}
+
+//int Quadtree::pruneSize_helper(int tolerance,QuadtreeNode *cRoot) const
+int Quadtree::pruneSize_helper(QuadtreeNode *cRoot) const
+{
+	if (cRoot ==  NULL) {
+		return 0;
+	}
+	else if (cRoot->nwChild == NULL) {
+		return 1;
+	}
+	/*else if (CheckDifference(cRoot,cRoot,tolerance)) {
+		return 1;
+	}*/
+	return pruneSize_helper(cRoot->nwChild) + pruneSize_helper(cRoot->neChild) + pruneSize_helper(cRoot->swChild) + pruneSize_helper(cRoot->seChild);
+}
+
+void Quadtree::prune_helper(int tolerance, QuadtreeNode *&cRoot)
+{
+	if (cRoot == NULL) {
+		return;
+	}
+
+	else if (cRoot->nwChild == NULL) {
+		return;
+	}
+	else if (CheckTolerance(cRoot,cRoot,tolerance)){
+		clear_helper(cRoot->nwChild);
+		clear_helper(cRoot->neChild);
+		clear_helper(cRoot->swChild);
+		clear_helper(cRoot->seChild);
+	}
+	else {
+		prune_helper(tolerance, cRoot->nwChild);
+		prune_helper(tolerance, cRoot->neChild);
+		prune_helper(tolerance, cRoot->swChild);
+		prune_helper(tolerance, cRoot->seChild);
+	}
+}
+bool Quadtree::CheckTolerance(QuadtreeNode *AveRoot, QuadtreeNode *cRoot, int tolerance) //const
+{
+	if (cRoot == NULL) {
+		return false;
+	}
+	else if (cRoot->nwChild == NULL) {
+		return CheckDifference(AveRoot, cRoot, tolerance);
+	}
+
+ 	return CheckTolerance(AveRoot, cRoot->nwChild, tolerance) && CheckTolerance(AveRoot, cRoot->neChild, tolerance) && CheckTolerance(AveRoot, cRoot->swChild, tolerance) && CheckTolerance(AveRoot, cRoot->seChild, tolerance);
+	
+}
+bool Quadtree::CheckDifference(QuadtreeNode *first, QuadtreeNode *second, int tolerance) //const
+{
+	int redDiff = pow((first->element.red - second->element.red),2);
+	int greenDiff = pow((first->element.green - second->element.green),2);
+	int blueDiff = pow((first->element.blue - second->element.blue),2);
+	int different = redDiff + greenDiff + blueDiff;
+
+	if (different <= tolerance) {
+		return true;
+	}
+	else {
+		return false;
+	}
+	
+}
+int Quadtree::idealPrune_helper(int numLeaves, int minTolerance, int maxTolerance) const
+{
+	int midTolerance = (minTolerance+maxTolerance)/2;
+	int pruneMid = pruneSize(midTolerance);
+
+	if (maxTolerance <= minTolerance) {
+		return minTolerance;
+	}
+	else if (pruneMid <= numLeaves) {
+		return idealPrune_helper(numLeaves,minTolerance,midTolerance);
+	}
+	else {
+		return idealPrune_helper(numLeaves,midTolerance+1,maxTolerance);
+	}
+}
