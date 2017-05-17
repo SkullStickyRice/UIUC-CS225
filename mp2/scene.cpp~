@@ -1,0 +1,256 @@
+#include "scene.h"
+#include "image.h"
+
+#include <iostream>
+using namespace std;
+//Constructor
+Scene::Scene (int max) 
+{
+	imax = max;
+	theImage = new Image *[imax];
+	xcoords = new int[imax];
+	ycoords = new int[imax];
+	for (int i = 0; i < imax; i++) {
+		theImage[i] = NULL;
+		xcoords[i] = 0;
+		ycoords[i] = 0;	
+	}
+}
+//dtor
+Scene::~Scene()
+{
+	clear();
+}
+//clear helper function
+void Scene::clear()
+{
+	if (theImage != NULL){
+		delete [] theImage;
+	}
+
+	delete [] xcoords;
+	delete [] ycoords;
+}
+
+//cctor
+Scene::Scene(const Scene &source)
+{
+	copy(source);
+}
+//copy helper function
+void Scene::copy(const Scene &source)
+{
+	imax = source.imax;
+	//theImage = source.theImage;
+	xcoords = new int[imax];
+	ycoords = new int[imax];
+	theImage = new Image *[imax];
+	
+	for (int i = 0; i < imax; i++){
+		xcoords[i] = source.xcoords[i];
+		ycoords[i] = source.ycoords[i];
+
+		if (source.theImage[i] != NULL){
+			theImage[i] = new Image (*source).theImage[i];
+		}
+		else {
+			theImage[i] = NULL;
+			xcoords[i] = 0;
+			ycoords[i] = 0;
+		}	
+	}
+}
+//assignment operator 
+const Scene &Scene::operator = (const Scene &source)
+{
+	if (this != &source ) {
+		clear();
+		copy(source);
+	}
+	
+	return *this;
+}
+//modifies the size of the array of Image pointers w/out changing their indices
+void Scene::changemaxlayers(int newmax)
+{
+//allocated the new array
+	Image **newtheImage = new Image*[newmax];
+	int *newxcoords = new int[newmax];
+	int *newycoords = new int[newmax];
+	for (int i = 0; i < newmax; i++){
+		newtheImage[i] = NULL;	
+	}
+//check & copy
+	if (newmax < imax){
+		for (int i = newmax; i < imax; i++){
+			if (theImage[i] != NULL){
+				std::cout << "invalid new max" << endl;
+				return;
+			}
+		}
+		for (int a = 0; a < newmax; a++){
+			*newtheImage[a] = *theImage[a];
+			newxcoords[a] = xcoords[a];
+			newycoords[a] = ycoords[a];	
+		}
+		
+	}
+	else if (newmax >= imax){
+		for (int a = 0; a < imax; a++){
+			*newtheImage[a] = *theImage[a];
+			newxcoords[a] = xcoords[a];
+			newycoords[a] = ycoords[a];
+		}
+	}
+//clean the old arry
+	clear();
+//point the source array to the new array
+	theImage = newtheImage;
+	xcoords = newxcoords;
+	ycoords = newycoords;
+	//imax = newmax;
+}
+//add a picture to the scene
+void Scene::addpicture(const char* FileName, int index, int x, int y)
+{
+//check if it's in the bound
+	if (index > imax || index < 0){
+		cout << "index out of bounds" << endl;
+		return;
+	}
+//check if it's already exist
+	//if (theImage[index] != NULL){
+		//delete theImage[index];
+	//}
+
+	
+//check
+	if (theImage[index] != NULL){
+		delete theImage[index];
+	}
+	theImage[index] = new Image;
+	theImage[index] -> readFromFile(FileName);
+//replace
+	xcoords[index] = x;
+	ycoords[index] = y;
+	//}
+	//else
+	
+	
+
+	//Image *image = new Image();
+	//image -> readFromFile(FileName);
+	//theImage[index] = image;
+//////////////////////////////////////////////////////////////////
+		
+}
+//moves an Image form one layer to another 
+void Scene::changelayer(int index,int newindex)
+{
+//check 
+	if (index == newindex){
+		return;
+	}
+//check 
+	if (theImage[newindex] != NULL){
+		delete theImage[newindex];
+	}	
+//check
+	if (index < 0 || index > imax || newindex < 0 || newindex > imax){
+		cout << "invalid index" << endl;
+		return;
+	}
+//replace
+	theImage[newindex] = theImage[index];
+	theImage[index] = NULL;
+	xcoords[newindex] = xcoords[index];
+	xcoords[index] = 0;
+	ycoords[newindex] = ycoords[index];
+	ycoords[index] = 0;	
+}
+//changes the x and y coordinates of the image in the specitides layer
+void Scene::translate(int index, int xcoord, int ycoord)
+{
+//check
+	if (index < 0 || index > imax || theImage[index] == NULL){
+		cout << "invalid index" << endl;
+		return;
+	}
+//translate
+	xcoords[index] = xcoord;
+	ycoords[index] = ycoord;
+}
+//delete the image at the given index
+void Scene::deletepicture(int index)
+{
+//check
+	if (index < 0 || index > imax || theImage[index] == NULL){
+		cout << "invalid index" << endl;
+		return;
+	}
+//delete
+	delete theImage[index];
+	theImage[index] = NULL;
+	xcoords[index] = 0;
+	ycoords[index] = 0;
+}//returen a pointer to the image at the specified index, not a copy 
+Image *Scene::getpicture(int index) const
+{
+	if (index < 0 || index > imax){
+		cout << "invalid index" << endl;
+		return NULL;
+	}
+	
+	else
+		return theImage[index];
+}
+//draws the whole scene on one image and returns that image by value
+Image Scene::drawscene() const
+{
+//initial
+	size_t min_width = 0;
+	size_t min_height = 0;
+//
+	for (int i = 0; i < imax; i++){
+		if (theImage[i] != NULL){
+			if(min_width < (theImage[i]->width() + xcoords[i])){
+				min_width = theImage[i]->width() + xcoords[i];
+			}
+			if(min_height < (theImage[i]->height() + ycoords[i])){
+				min_height = theImage[i]->height() + ycoords[i];
+			}
+		}
+	}
+
+	Image newImage;
+	newImage.resize(min_width, min_height);
+
+	for (int i = 0; i < imax; i++){
+		if (theImage[i] != NULL){
+			for (size_t  a = 0; a < theImage[i]->width(); a++){
+				for (size_t  b = 0; b < theImage[i]->height(); b++){
+					*newImage(xcoords[i]+a, ycoords[i]+b) = *(*theImage[i])(a,b);
+				}
+			}
+		}
+	}		
+	
+return newImage;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

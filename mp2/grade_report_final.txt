@@ -1,0 +1,8 @@
+Grading r10914 by tolar2 committed on Tue Feb  9 00:24:21 CST 2016
+Monad Autograder
+Testing mp2 at 2016-02-10 00:26:09
+
+"That's legit as shit." ~ Rick Barber
+
+Setting up test environment...
+Error: /dev/shm/cs225student/autograder/temp/mp2/scene.h does not exist.
