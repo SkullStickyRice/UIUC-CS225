@@ -1,0 +1,29 @@
+Grading r32290 by xli146 committed on Sat Apr  2 20:03:46 CDT 2016
+Monad Autograder
+Testing lab_huffman at 2016-04-04 01:12:26
+
+"What is written without effort is, in general, read without pleasure." ~ Samuel Johnson
+
+Setting up test environment...
+Compiling...
+================================================================
+
+
+Running tests...
+================================================================
+test_encoder_binary_4  . . . . [20 pts] - passed
+test_encoder_binary_8  . . . . [20 pts] - passed
+test_encoder_valgrind_2 (asan) [6 pts]  - passed
+test_encoder_writetree_4 . . . [2 pts]  - passed
+test_encoder_writetree_8 . . . [2 pts]  - passed
+test_decode_4  . . . . . . . . [20 pts] - passed
+test_decode_8  . . . . . . . . [20 pts] - passed
+test_decode_readtree_4 . . . . [2 pts]  - passed
+test_decode_readtree_8 . . . . [2 pts]  - passed
+test_the_works (asan)  . . . . [6 pts]  - passed
+
+
+Total score...
+================================================================
+TOTAL SCORE: 100
+
