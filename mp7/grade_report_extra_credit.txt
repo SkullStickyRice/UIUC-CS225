@@ -1,0 +1,24 @@
+Grading r43011 by xli146 committed on Mon Apr 25 21:46:47 CDT 2016
+Monad Autograder
+Testing mp7.1 at 2016-04-27 00:25:44
+
+"I think I may have made a student cry during my exam..." ~ Joe DiFebo
+
+Setting up test environment...
+Compiling...
+================================================================
+
+
+Running tests...
+================================================================
+addElements1 . . . . [20 pts] - passed
+addElements2 . . . . [20 pts] - passed
+testFindAndSetUnion1 [20 pts] - passed
+testFindAndSetUnion2 [20 pts] - passed
+testFindAndSetUnion3 [20 pts] - passed
+
+
+Total score...
+================================================================
+TOTAL SCORE: 100
+
